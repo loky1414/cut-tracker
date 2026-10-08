@@ -1,554 +1,593 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IronTrack - Web Prototype</title>
-<style>
-  :root {
-    --bg-phone: #000000;
-    --card-bg: #1c1c1e;
-    --card-inner: #2c2c2e;
-    --accent: #30d158;
-    --text: #ffffff;
-    --subtext: #8e8e93;
-    --border: #38383a;
-  }
-  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; margin: 0; padding: 0; }
-  body {
-    background: #121214;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px;
-  }
-
-  /* 模擬 iPhone 16 Pro 外框 */
-  .phone-frame {
-    width: 390px;
-    height: 820px;
-    background: var(--bg-phone);
-    border-radius: 54px;
-    border: 12px solid #2e2e32;
-    box-shadow: 0 30px 80px rgba(0,0,0,0.8), inset 0 0 4px rgba(255,255,255,0.2);
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* 動態島 (Dynamic Island) */
-  .dynamic-island {
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 120px;
-    height: 35px;
-    background: #000;
-    border-radius: 20px;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    color: var(--accent);
-    font-size: 13px;
-    font-weight: 700;
-    border: 1px solid #333;
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .dynamic-island.active {
-    width: 280px;
-    height: 42px;
-    background: #111;
-    justify-content: space-between;
-    padding: 0 16px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-  }
-
-  /* 內容滾動區 */
-  .content-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 60px 16px 80px 16px;
-    color: var(--text);
-  }
-  .content-area::-webkit-scrollbar { display: none; }
-
-  /* 頂部訓練概覽 */
-  .header-box {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-  .header-box h1 { font-size: 22px; font-weight: 800; }
-  .timer-pill {
-    background: var(--card-bg);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    color: var(--subtext);
-    border: 1px solid var(--border);
-  }
-
-  .volume-card {
-    background: linear-gradient(135deg, #1c1c1e 0%, #252528 100%);
-    border-radius: 16px;
-    padding: 14px 18px;
-    margin-bottom: 18px;
-    border: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .volume-card .val { font-size: 22px; font-weight: 800; color: var(--accent); }
-
-  /* 動作卡片 */
-  .card {
-    background: var(--card-bg);
-    border-radius: 18px;
-    padding: 16px;
-    margin-bottom: 18px;
-    border: 1px solid var(--border);
-  }
-  .card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
-  }
-  .exercise-name { font-size: 17px; font-weight: 700; }
-  .plate-btn {
-    font-size: 12px;
-    color: var(--accent);
-    background: var(--card-inner);
-    padding: 4px 10px;
-    border-radius: 12px;
-    cursor: pointer;
-    border: none;
-  }
-  .exercise-sub { font-size: 12px; color: var(--subtext); margin-bottom: 12px; }
-
-  /* 表格區 */
-  .set-grid {
-    display: grid;
-    grid-template-columns: 32px 42px 75px 65px 44px 38px;
-    gap: 6px;
-    align-items: center;
-    text-align: center;
-    margin-bottom: 8px;
-  }
-  .grid-header { font-size: 11px; color: var(--subtext); font-weight: 600; margin-bottom: 4px; }
-  
-  .badge-btn {
-    background: var(--card-inner);
-    border: none;
-    border-radius: 6px;
-    height: 28px;
-    font-size: 11px;
-    font-weight: 700;
-    color: #fff;
-    cursor: pointer;
-  }
-  .badge-btn.warmup { background: #ff9f0a; color: #000; }
-  .badge-btn.drop { background: #bf5af2; }
-  .badge-btn.fail { background: #ff453a; }
-
-  input.set-input {
-    background: var(--card-inner);
-    border: 1px solid transparent;
-    border-radius: 8px;
-    height: 32px;
-    width: 100%;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-    text-align: center;
-    outline: none;
-  }
-  input.set-input:focus { border-color: var(--accent); }
-
-  .check-circle {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--card-inner);
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    color: var(--subtext);
-    cursor: pointer;
-    transition: 0.2s;
-  }
-  .check-circle.done {
-    background: var(--accent);
-    color: #000;
-    font-weight: 900;
-  }
-
-  .e1rm-bar {
-    font-size: 11px;
-    color: var(--subtext);
-    text-align: right;
-    margin-top: 4px;
-  }
-
-  /* 底部導航欄 */
-  .nav-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 70px;
-    background: rgba(28, 28, 30, 0.85);
-    backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    padding-bottom: 10px;
-  }
-  .nav-item { font-size: 10px; color: var(--subtext); text-align: center; cursor: pointer; }
-  .nav-item.active { color: var(--accent); font-weight: 700; }
-  .nav-icon { font-size: 18px; margin-bottom: 3px; display: block; }
-
-  /* 彈窗 Modal */
-  .modal-overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.75);
-    backdrop-filter: blur(10px);
-    z-index: 200;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    transition: opacity 0.3s;
-  }
-  .modal-overlay.hidden { display: none; }
-  
-  .sheet {
-    background: #1c1c1e;
-    border-radius: 24px 24px 0 0;
-    padding: 24px 20px 40px 20px;
-    color: #fff;
-    border-top: 1px solid #333;
-  }
-  .sheet h2 { font-size: 18px; margin-bottom: 14px; }
-  .sheet-field { margin-bottom: 14px; }
-  .sheet-field label { display: block; font-size: 12px; color: var(--subtext); margin-bottom: 6px; }
-  .sheet-field select, .sheet-field input {
-    width: 100%;
-    padding: 10px;
-    background: #2c2c2e;
-    border: 1px solid #3a3a3c;
-    border-radius: 10px;
-    color: #fff;
-    font-size: 14px;
-    outline: none;
-  }
-  .btn-submit {
-    width: 100%;
-    padding: 14px;
-    background: var(--accent);
-    color: #000;
-    border: none;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 8px;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>訓練 & 減脂追蹤 (Workout & Cut Tracker)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+  </style>
 </head>
-<body>
+<body class="bg-black text-slate-100 min-h-screen pb-28 select-none">
 
-<div class="phone-frame">
-  <!-- 動態島組間休息倒數 -->
-  <div class="dynamic-island" id="island">
-    <span id="island-icon">⏱️</span>
-    <span id="island-text">90s</span>
-    <span id="island-skip" style="display:none; font-size:11px; cursor:pointer;" onclick="stopTimer()">跳過</span>
-  </div>
-
-  <!-- 主訓練畫面 -->
-  <div class="content-area">
-    <div class="header-box">
+  <!-- 頂部浮動計時器與狀態列 -->
+  <header class="sticky top-0 z-40 bg-black/90 backdrop-blur-md border-b border-zinc-800/80 px-4 py-3">
+    <div class="max-w-md mx-auto flex items-center justify-between">
       <div>
-        <h1>今日訓練</h1>
-        <div style="font-size: 12px; color: var(--subtext);">推日 (Push Day)</div>
-      </div>
-      <button class="plate-btn" onclick="openOnboarding()">👤 資料設定</button>
-    </div>
-
-    <!-- 總容量卡片 -->
-    <div class="volume-card">
-      <div>
-        <div style="font-size: 12px; color: var(--subtext);">累積總容量</div>
-        <div class="val"><span id="total-vol">0</span> kg</div>
-      </div>
-      <div class="timer-pill">進行中 00:25:30</div>
-    </div>
-
-    <!-- 動作 1：槓鈴臥推 -->
-    <div class="card">
-      <div class="card-top">
-        <span class="exercise-name">槓鈴臥推 (Bench Press)</span>
-        <button class="plate-btn" onclick="openPlateCalc(100)">計餅機 ⚙️</button>
-      </div>
-      <div class="exercise-sub">上次最佳: 100 kg × 8 次 ｜ 座椅格數: #3</div>
-
-      <div class="set-grid grid-header">
-        <div>組</div>
-        <div>類型</div>
-        <div>重量</div>
-        <div>次數</div>
-        <div>RPE</div>
-        <div>完成</div>
+        <h1 class="text-xl font-extrabold text-white flex items-center gap-2">
+          今日訓練
+          <span id="workoutDurationText" class="text-xs font-normal text-zinc-400 bg-zinc-800/80 px-2 py-0.5 rounded-full">進行中 00:00:00</span>
+        </h1>
+        <p id="subRoutineTitle" class="text-xs text-zinc-400 mt-0.5">推日 (Push Day) · PPL 課表</p>
       </div>
 
-      <!-- 第一組 -->
-      <div class="set-grid">
-        <div style="font-size:12px; color:var(--subtext);">1</div>
-        <button class="badge-btn warmup" onclick="toggleBadge(this)">W</button>
-        <input type="number" class="set-input" value="60" id="w1" oninput="updateStats()">
-        <input type="number" class="set-input" value="12" id="r1" oninput="updateStats()">
-        <input type="number" class="set-input" value="7.0" step="0.5">
-        <button class="check-circle" onclick="toggleSet(this, 1)">✓</button>
-      </div>
-
-      <!-- 第二組 -->
-      <div class="set-grid">
-        <div style="font-size:12px; color:var(--subtext);">2</div>
-        <button class="badge-btn" onclick="toggleBadge(this)">常</button>
-        <input type="number" class="set-input" value="100" id="w2" oninput="updateStats()">
-        <input type="number" class="set-input" value="8" id="r2" oninput="updateStats()">
-        <input type="number" class="set-input" value="8.5" step="0.5">
-        <button class="check-circle" onclick="toggleSet(this, 2)">✓</button>
-      </div>
-
-      <div class="e1rm-bar" id="e1rm-text">估算 1RM: 124 kg</div>
-    </div>
-
-    <!-- 動作 2：坐姿啞鈴肩推 -->
-    <div class="card">
-      <div class="card-top">
-        <span class="exercise-name">坐姿啞鈴肩推</span>
-      </div>
-      <div class="exercise-sub">上次最佳: 28 kg × 10 次</div>
-
-      <div class="set-grid grid-header">
-        <div>組</div>
-        <div>類型</div>
-        <div>重量</div>
-        <div>次數</div>
-        <div>RPE</div>
-        <div>完成</div>
-      </div>
-
-      <div class="set-grid">
-        <div style="font-size:12px; color:var(--subtext);">1</div>
-        <button class="badge-btn" onclick="toggleBadge(this)">常</button>
-        <input type="number" class="set-input" value="28" id="w3" oninput="updateStats()">
-        <input type="number" class="set-input" value="10" id="r3" oninput="updateStats()">
-        <input type="number" class="set-input" value="8.0" step="0.5">
-        <button class="check-circle" onclick="toggleSet(this, 3)">✓</button>
+      <!-- 90s 快捷計時掣 / 倒數狀態 -->
+      <div id="restTimerBox" class="flex items-center gap-1.5 bg-zinc-800 border border-zinc-700/80 rounded-full px-3 py-1 cursor-pointer active:scale-95 transition" onclick="triggerRestTimer(90)">
+        <span class="text-xs">⏱️</span>
+        <span id="timerText" class="text-xs font-mono font-bold text-emerald-400">90s</span>
       </div>
     </div>
-  </div>
+  </header>
 
-  <!-- 底部導航 -->
-  <div class="nav-bar">
-    <div class="nav-item active"><span class="nav-icon">🏋️</span>訓練</div>
-    <div class="nav-item"><span class="nav-icon">📅</span>歷史</div>
-    <div class="nav-item"><span class="nav-icon">📈</span>圖表</div>
-    <div class="nav-item"><span class="nav-icon">👤</span>我的</div>
-  </div>
+  <!-- 主內容區域 (乾淨現代排版，無任何外圍假手機邊框) -->
+  <main class="max-w-md mx-auto p-4 space-y-4">
 
-  <!-- 槓餅計算器彈窗 -->
-  <div class="modal-overlay hidden" id="plate-modal" onclick="closeModal('plate-modal')">
-    <div class="sheet" onclick="event.stopPropagation()">
-      <h2>槓片配置計算器</h2>
-      <p id="plate-info" style="font-size:13px; color:var(--subtext); margin-bottom:14px;"></p>
-      <div id="plate-result" style="font-size:14px; line-height:1.8;"></div>
-      <button class="btn-submit" onclick="closeModal('plate-modal')">關閉</button>
+    <!-- 頁籤 1: 訓練 (Workout) -->
+    <div id="tab-workout" class="tab-content space-y-4">
+      
+      <!-- 總容量儀表板 -->
+      <div class="bg-zinc-900 border border-zinc-800/90 rounded-2xl p-4 flex items-center justify-between">
+        <div>
+          <div class="text-[11px] text-zinc-400 font-medium">累積總容量</div>
+          <div id="statTotalVolume" class="text-3xl font-black text-emerald-400 tracking-tight mt-0.5">0 <span class="text-sm font-normal text-zinc-400">kg</span></div>
+        </div>
+        <div class="text-right">
+          <div class="text-[11px] text-zinc-400 font-medium">完成總組數</div>
+          <div id="statTotalSets" class="text-xl font-bold text-white mt-0.5">0 <span class="text-xs font-normal text-zinc-400">組</span></div>
+        </div>
+      </div>
+
+      <!-- 課表分化選擇卡片 -->
+      <div class="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-3.5 space-y-2">
+        <div class="flex items-center justify-between text-xs text-zinc-400">
+          <span>切換課表模式</span>
+          <span class="text-emerald-400 text-[11px] cursor-pointer" onclick="toggleSplitSetting()"><i class="fa-solid fa-arrows-rotate mr-1"></i>重選課表</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <select id="splitModeSelect" onchange="onSplitModeChange()" class="bg-zinc-800 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <option value="PPL_REST_PPL">PPL Rest PPL (7日)</option>
+            <option value="PPLUL">PPLUL (推/拉/腿/上/下)</option>
+            <option value="FULLBODY">Full Body (全身 x2/x3)</option>
+            <option value="CUSTOM">自訂模式</option>
+          </select>
+          <select id="workoutTypeSelect" onchange="onWorkoutTypeChange()" class="bg-zinc-800 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <!-- 動態生成課堂 -->
+          </select>
+        </div>
+      </div>
+
+      <!-- 動作組數記錄器容器 -->
+      <div id="exerciseCardsContainer" class="space-y-4">
+        <!-- 動態產生每個動作卡片 -->
+      </div>
+
+      <!-- 加動作按鈕 -->
+      <button onclick="promptNewExercise()" class="w-full py-3 border border-dashed border-zinc-700 hover:border-zinc-500 rounded-2xl text-xs font-semibold text-zinc-300 active:scale-[0.99] transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-plus text-emerald-400"></i> 新增動作 (Exercise)
+      </button>
+
+      <!-- 晨重及有氧快記 -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-white">晨磅體重 & 有氧時間</span>
+          <span id="targetWeightNote" class="text-zinc-400 text-[11px]">目標: 70.0 kg</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-zinc-800/80 rounded-xl p-2.5 flex items-center justify-between">
+            <input type="number" id="inputDailyWeight" step="0.1" placeholder="體重 kg" class="w-20 bg-transparent text-white font-bold text-base focus:outline-none" oninput="saveCurrentData()" />
+            <span class="text-xs text-zinc-400">kg</span>
+          </div>
+          <div class="bg-zinc-800/80 rounded-xl p-2.5 flex items-center justify-between">
+            <input type="number" id="inputDailyCardio" placeholder="有氧分鐘" class="w-20 bg-transparent text-white font-bold text-base focus:outline-none" oninput="saveCurrentData()" />
+            <span class="text-xs text-zinc-400">分鐘</span>
+          </div>
+        </div>
+      </div>
+
     </div>
-  </div>
 
-  <!-- 首次初始化彈窗 (Onboarding) -->
-  <div class="modal-overlay hidden" id="onboarding-modal">
-    <div class="sheet">
-      <h2>設定您的檔案 (Onboarding)</h2>
-      <div class="sheet-field">
-        <label>性別</label>
-        <select id="user-gender"><option>男</option><option>女</option></select>
+    <!-- 頁籤 2: 歷史 (History) -->
+    <div id="tab-history" class="tab-content hidden space-y-3">
+      <div class="flex items-center justify-between px-1">
+        <h2 class="text-sm font-bold text-white">過去訓練紀錄</h2>
+        <button onclick="exportCSV()" class="text-xs text-emerald-400 flex items-center gap-1 hover:underline">
+          <i class="fa-solid fa-download"></i> 匯出 CSV
+        </button>
       </div>
-      <div class="sheet-field">
-        <label>體重 (kg)</label>
-        <input type="number" id="user-weight" value="75">
+      <div id="historyListContainer" class="space-y-2.5">
+        <!-- 動態列出歷史記錄 -->
       </div>
-      <div class="sheet-field">
-        <label>健身經驗</label>
-        <select id="user-exp">
-          <option>新手 (0 - 1 年)</option>
-          <option selected>中階 (1 - 3 年)</option>
-          <option>高階 (3 年以上)</option>
-        </select>
-      </div>
-      <div class="sheet-field">
-        <label>核心目標</label>
-        <select id="user-goal">
-          <option>肌肥大 (增肌)</option>
-          <option>健力 (力量提升)</option>
-          <option>維持健康 / 減脂</option>
-        </select>
-      </div>
-      <button class="btn-submit" onclick="saveOnboarding()">開始訓練</button>
     </div>
-  </div>
-</div>
 
-<script>
-  let timerInterval = null;
-  let remainingTime = 90;
+    <!-- 頁籤 3: 圖表 (Charts) -->
+    <div id="tab-charts" class="tab-content hidden space-y-4">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+        <h3 class="text-xs font-bold text-zinc-300 mb-3">體重變化走勢 (kg)</h3>
+        <div class="h-52 relative">
+          <canvas id="chartWeight"></canvas>
+        </div>
+      </div>
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+        <h3 class="text-xs font-bold text-zinc-300 mb-3">近 7 次訓練總容量 (kg)</h3>
+        <div class="h-52 relative">
+          <canvas id="chartVolume"></canvas>
+        </div>
+      </div>
+    </div>
 
-  // 1. 完成組別與倒數計時
-  function toggleSet(btn, id) {
-    btn.classList.toggle('done');
-    if (btn.classList.contains('done')) {
-      startRestTimer(90);
-    }
-    updateStats();
-  }
+    <!-- 頁籤 4: 我的 (Settings) -->
+    <div id="tab-settings" class="tab-content hidden space-y-4">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
+        <h3 class="text-sm font-bold text-white">個人目標</h3>
+        <div>
+          <label class="text-xs text-zinc-400">目標體重 (kg)</label>
+          <input type="number" id="settingTargetWeight" step="0.1" value="70.0" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white mt-1" onchange="saveProfileSettings()" />
+        </div>
+        <div>
+          <label class="text-xs text-zinc-400">預設組間休息時間 (秒)</label>
+          <input type="number" id="settingRestSec" value="90" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white mt-1" onchange="saveProfileSettings()" />
+        </div>
+      </div>
+    </div>
 
-  function startRestTimer(seconds) {
-    clearInterval(timerInterval);
-    remainingTime = seconds;
-    const island = document.getElementById('island');
-    const text = document.getElementById('island-text');
-    const skip = document.getElementById('island-skip');
+  </main>
 
-    island.classList.add('active');
-    skip.style.display = 'inline';
+  <!-- 底部原生風格導覽列 (純黑色，無邊框突兀感) -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/80 px-6 py-2.5">
+    <div class="max-w-md mx-auto flex justify-between">
+      <button onclick="switchTab('workout')" id="navBtn-workout" class="flex flex-col items-center gap-1 text-emerald-400">
+        <i class="fa-solid fa-dumbbell text-lg"></i>
+        <span class="text-[10px] font-semibold">訓練</span>
+      </button>
+      <button onclick="switchTab('history')" id="navBtn-history" class="flex flex-col items-center gap-1 text-zinc-500">
+        <i class="fa-solid fa-calendar-days text-lg"></i>
+        <span class="text-[10px] font-semibold">歷史</span>
+      </button>
+      <button onclick="switchTab('charts')" id="navBtn-charts" class="flex flex-col items-center gap-1 text-zinc-500">
+        <i class="fa-solid fa-chart-line text-lg"></i>
+        <span class="text-[10px] font-semibold">圖表</span>
+      </button>
+      <button onclick="switchTab('settings')" id="navBtn-settings" class="flex flex-col items-center gap-1 text-zinc-500">
+        <i class="fa-solid fa-user text-lg"></i>
+        <span class="text-[10px] font-semibold">我的</span>
+      </button>
+    </div>
+  </nav>
 
-    timerInterval = setInterval(() => {
-      let m = Math.floor(remainingTime / 60);
-      let s = remainingTime % 60;
-      text.innerText = `休息倒數: ${m}:${s < 10 ? '0' : ''}${s}`;
-      remainingTime--;
-
-      if (remainingTime < 0) {
-        clearInterval(timerInterval);
-        text.innerText = "休息結束！";
-        skip.style.display = 'none';
-        setTimeout(() => {
-          island.classList.remove('active');
-          text.innerText = "90s";
-        }, 2000);
+  <!-- 核心腳本邏輯 -->
+  <script>
+    // 課表預設
+    const SPLITS = {
+      PPL_REST_PPL: {
+        title: "PPL 課表",
+        days: [
+          { key: "push1", label: "推日 (Push Day)", list: ["槓鈴臥推 (Bench Press)", "坐姿啞鈴肩推", "雙槓臂屈伸", "繩索三頭下壓"] },
+          { key: "pull1", label: "拉日 (Pull Day)", list: ["引體上升 / 滑輪下拉", "胸支撐划船", "啞鈴二頭彎舉", "面拉 (Face Pull)"] },
+          { key: "leg1", label: "腿日 (Leg Day)", list: ["槓鈴深蹲 (Squat)", "羅馬尼亞硬舉 (RDL)", "腿推機 (Leg Press)", "提踵 (Calf Raise)"] },
+          { key: "rest", label: "休息日 (Rest Day)", list: [] }
+        ]
+      },
+      PPLUL: {
+        title: "PPLUL 課表",
+        days: [
+          { key: "push", label: "推日 (Push)", list: ["槓鈴臥推", "啞鈴上斜臥推", "側平舉", "三頭伸展"] },
+          { key: "pull", label: "拉日 (Pull)", list: ["滑輪下拉", "槓鈴划船", "二頭彎舉"] },
+          { key: "leg", label: "腿日 (Leg)", list: ["深蹲", "腿推", "腿後勾"] },
+          { key: "upper", label: "上肢 (Upper)", list: ["肩推", "引體", "雙槓屈伸"] },
+          { key: "lower", label: "下肢 (Lower)", list: ["硬舉", "分腿蹲", "核心懸垂提腿"] }
+        ]
+      },
+      FULLBODY: {
+        title: "Full Body 課表",
+        days: [
+          { key: "fba", label: "Full Body A", list: ["槓鈴深蹲", "槓鈴臥推", "滑輪下拉"] },
+          { key: "fbb", label: "Full Body B", list: ["硬舉", "站姿肩推", "槓鈴划船"] }
+        ]
+      },
+      CUSTOM: {
+        title: "自訂課表",
+        days: [{ key: "c1", label: "自由重訓日", list: ["深蹲", "臥推", "硬舉"] }]
       }
-    }, 1000);
-  }
+    };
 
-  function stopTimer() {
-    clearInterval(timerInterval);
-    const island = document.getElementById('island');
-    document.getElementById('island-text').innerText = "已跳過";
-    document.getElementById('island-skip').style.display = 'none';
-    setTimeout(() => {
-      island.classList.remove('active');
-      document.getElementById('island-text').innerText = "90s";
-    }, 1000);
-  }
+    let todayStr = new Date().toISOString().split('T')[0];
+    let appStore = JSON.parse(localStorage.getItem('cut_fit_records') || '{}');
+    let appSettings = JSON.parse(localStorage.getItem('cut_fit_config') || JSON.stringify({
+      targetWeight: 70.0,
+      restSec: 90,
+      splitMode: 'PPL_REST_PPL'
+    }));
 
-  // 2. 切換組別類型 (常規 -> 熱身 W -> 遞減 D -> 力竭 F)
-  function toggleBadge(btn) {
-    if (btn.innerText === '常') {
-      btn.innerText = 'W';
-      btn.className = 'badge-btn warmup';
-    } else if (btn.innerText === 'W') {
-      btn.innerText = 'D';
-      btn.className = 'badge-btn drop';
-    } else if (btn.innerText === 'D') {
-      btn.innerText = 'F';
-      btn.className = 'badge-btn fail';
-    } else {
-      btn.innerText = '常';
-      btn.className = 'badge-btn';
-    }
-  }
+    let timerInterval = null;
+    let timerRemaining = 0;
+    let startTime = Date.now();
 
-  // 3. E1RM 與 總容量計算
-  function updateStats() {
-    let w2 = parseFloat(document.getElementById('w2').value) || 0;
-    let r2 = parseFloat(document.getElementById('r2').value) || 0;
-    if (w2 > 0 && r2 > 0) {
-      let e1rm = Math.round(w2 * (36 / (37 - r2)));
-      document.getElementById('e1rm-text').innerText = `估算 1RM: ${e1rm} kg (Brzycki)`;
+    window.addEventListener('DOMContentLoaded', () => {
+      initDropdowns();
+      loadTodayData();
+      startWorkoutDurationClock();
+    });
+
+    // 啟動訓練時長計時
+    function startWorkoutDurationClock() {
+      setInterval(() => {
+        const sec = Math.floor((Date.now() - startTime) / 1000);
+        const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+        const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        document.getElementById('workoutDurationText').innerText = `進行中 ${h}:${m}:${s}`;
+      }, 1000);
     }
 
-    // 計算打勾組別的總容量
-    let total = 0;
-    document.querySelectorAll('.card').forEach(card => {
-      const rows = card.querySelectorAll('.set-grid:not(.grid-header)');
-      rows.forEach(row => {
-        const isDone = row.querySelector('.check-circle').classList.contains('done');
-        if (isDone) {
-          const inputs = row.querySelectorAll('.set-input');
-          const weight = parseFloat(inputs[0].value) || 0;
-          const reps = parseFloat(inputs[1].value) || 0;
-          total += weight * reps;
+    function initDropdowns() {
+      document.getElementById('splitModeSelect').value = appSettings.splitMode || 'PPL_REST_PPL';
+      renderWorkoutTypeOptions();
+    }
+
+    function renderWorkoutTypeOptions() {
+      const mode = appSettings.splitMode || 'PPL_REST_PPL';
+      const preset = SPLITS[mode];
+      const sel = document.getElementById('workoutTypeSelect');
+      sel.innerHTML = '';
+      preset.days.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.key;
+        opt.innerText = d.label;
+        sel.appendChild(opt);
+      });
+      document.getElementById('subRoutineTitle').innerText = `${preset.days[0].label} · ${preset.title}`;
+    }
+
+    function onSplitModeChange() {
+      appSettings.splitMode = document.getElementById('splitModeSelect').value;
+      localStorage.setItem('cut_fit_config', JSON.stringify(appSettings));
+      renderWorkoutTypeOptions();
+      onWorkoutTypeChange();
+    }
+
+    function onWorkoutTypeChange() {
+      const selMode = appSettings.splitMode;
+      const selKey = document.getElementById('workoutTypeSelect').value;
+      const day = SPLITS[selMode].days.find(d => d.key === selKey);
+      if (day) {
+        document.getElementById('subRoutineTitle').innerText = `${day.label} · ${SPLITS[selMode].title}`;
+        // 載入預設動作
+        const defaultExercises = day.list.map(name => ({
+          name: name,
+          seat: "座椅格數: #3",
+          sets: [
+            { type: 'W', weight: 60, reps: 12, rpe: 7.0, done: true },
+            { type: '常', weight: 100, reps: 8, rpe: 8.5, done: true }
+          ]
+        }));
+        renderExercises(defaultExercises);
+        saveCurrentData();
+      }
+    }
+
+    function loadTodayData() {
+      const data = appStore[todayStr] || null;
+      if (data && data.exercises && data.exercises.length > 0) {
+        document.getElementById('inputDailyWeight').value = data.weight || '';
+        document.getElementById('inputDailyCardio').value = data.cardio || '';
+        renderExercises(data.exercises);
+      } else {
+        // 初次進入載入第一課堂
+        onWorkoutTypeChange();
+      }
+    }
+
+    // 渲染動作卡片 (同截圖精緻排版，深黑無框風格)
+    function renderExercises(exercises) {
+      const container = document.getElementById('exerciseCardsContainer');
+      container.innerHTML = '';
+
+      exercises.forEach((ex, exIdx) => {
+        const card = document.createElement('div');
+        card.className = "bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3";
+        card.dataset.idx = exIdx;
+
+        // 計算 1RM (Brzycki: Weight / (1.0278 - 0.0278 * Reps))
+        let best1RM = 0;
+        ex.sets.forEach(s => {
+          const w = parseFloat(s.weight) || 0;
+          const r = parseFloat(s.reps) || 0;
+          if (w > 0 && r > 0 && r < 12) {
+            const est = Math.round(w / (1.0278 - 0.0278 * r));
+            if (est > best1RM) best1RM = est;
+          }
+        });
+
+        let setRows = '';
+        ex.sets.forEach((st, sIdx) => {
+          const isWarm = st.type === 'W';
+          const typeBadgeColor = isWarm ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-zinc-800 text-zinc-300';
+          
+          setRows += `
+            <div class="flex items-center gap-2 py-1 text-xs">
+              <span class="w-6 text-center text-zinc-500 font-mono font-bold">${sIdx + 1}</span>
+              <button onclick="toggleSetType(${exIdx}, ${sIdx})" class="w-8 h-8 rounded-lg ${typeBadgeColor} font-bold text-xs flex items-center justify-center transition active:scale-95">
+                ${st.type || '常'}
+              </button>
+              <div class="flex-1 bg-zinc-800 rounded-xl px-2 py-1.5 flex items-center border border-zinc-700/60">
+                <input type="number" step="0.5" value="${st.weight}" class="w-full bg-transparent text-center text-white font-bold focus:outline-none" oninput="saveCurrentData()" />
+              </div>
+              <div class="flex-1 bg-zinc-800 rounded-xl px-2 py-1.5 flex items-center border border-zinc-700/60">
+                <input type="number" value="${st.reps}" class="w-full bg-transparent text-center text-white font-bold focus:outline-none" oninput="saveCurrentData()" />
+              </div>
+              <div class="w-12 bg-zinc-800 rounded-xl px-1 py-1.5 flex items-center border border-zinc-700/60">
+                <input type="number" step="0.5" value="${st.rpe || ''}" placeholder="-" class="w-full bg-transparent text-center text-white font-semibold focus:outline-none text-[11px]" oninput="saveCurrentData()" />
+              </div>
+              <button onclick="toggleDone(${exIdx}, ${sIdx})" class="w-8 h-8 rounded-xl ${st.done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-800 text-zinc-600'} flex items-center justify-center transition">
+                <i class="fa-solid fa-check text-xs"></i>
+              </button>
+            </div>
+          `;
+        });
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-extrabold text-sm text-white">${ex.name}</h3>
+              <p class="text-[11px] text-zinc-400 mt-0.5">${ex.seat || '器材設定: 無'} | 上次最佳: 100 kg × 8 次</p>
+            </div>
+            <button onclick="triggerRestTimer(90)" class="text-[11px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded-lg">
+              <i class="fa-regular fa-clock mr-1 text-emerald-400"></i>計時
+            </button>
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 text-[10px] text-zinc-500 font-semibold px-0.5">
+              <span class="w-6 text-center">組</span>
+              <span class="w-8 text-center">類型</span>
+              <span class="flex-1 text-center">重量(kg)</span>
+              <span class="flex-1 text-center">次數</span>
+              <span class="w-12 text-center">RPE</span>
+              <span class="w-8 text-center">完成</span>
+            </div>
+            <div class="sets-list space-y-1">${setRows}</div>
+          </div>
+
+          <div class="flex items-center justify-between pt-1 border-t border-zinc-800/80 text-[11px]">
+            <span class="text-zinc-500">估算 1RM: <strong class="text-zinc-300 font-mono">${best1RM > 0 ? best1RM + ' kg' : '-'}</strong> (Brzycki)</span>
+            <div class="flex gap-2">
+              <button onclick="addSet(${exIdx})" class="text-emerald-400 font-medium active:scale-95 transition">+ 加一組</button>
+              <button onclick="removeExercise(${exIdx})" class="text-zinc-500 hover:text-rose-400">刪除</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      updateTotals();
+    }
+
+    // 數據收集與儲存
+    function collectCards() {
+      const cards = document.querySelectorAll('#exerciseCardsContainer > div');
+      const exercises = [];
+      cards.forEach(c => {
+        const name = c.querySelector('h3').innerText;
+        const sets = [];
+        const rows = c.querySelectorAll('.sets-list > div');
+        rows.forEach(r => {
+          const type = r.querySelector('button').innerText.trim();
+          const inputs = r.querySelectorAll('input');
+          const isDone = r.querySelector('button:last-child').classList.contains('text-emerald-400');
+          sets.push({
+            type: type,
+            weight: inputs[0].value,
+            reps: inputs[1].value,
+            rpe: inputs[2].value,
+            done: isDone
+          });
+        });
+        exercises.push({ name, seat: "座椅格數: #3", sets });
+      });
+      return exercises;
+    }
+
+    function saveCurrentData() {
+      const ex = collectCards();
+      appStore[todayStr] = {
+        weight: document.getElementById('inputDailyWeight').value,
+        cardio: document.getElementById('inputDailyCardio').value,
+        exercises: ex
+      };
+      localStorage.setItem('cut_fit_records', JSON.stringify(appStore));
+      updateTotals();
+    }
+
+    function updateTotals() {
+      const ex = collectCards();
+      let totalV = 0;
+      let totalS = 0;
+      ex.forEach(item => {
+        item.sets.forEach(st => {
+          const w = parseFloat(st.weight) || 0;
+          const r = parseFloat(st.reps) || 0;
+          if (w > 0 && r > 0) {
+            totalV += (w * r);
+            totalS++;
+          }
+        });
+      });
+      document.getElementById('statTotalVolume').innerHTML = `${Math.round(totalV)} <span class="text-sm font-normal text-zinc-400">kg</span>`;
+      document.getElementById('statTotalSets').innerHTML = `${totalS} <span class="text-xs font-normal text-zinc-400">組</span>`;
+    }
+
+    // 組類型切換 (常 -> W熱身 -> D遞減)
+    function toggleSetType(exIdx, sIdx) {
+      const ex = collectCards();
+      const current = ex[exIdx].sets[sIdx].type;
+      const order = ['常', 'W', 'D'];
+      const next = order[(order.indexOf(current) + 1) % order.length];
+      ex[exIdx].sets[sIdx].type = next;
+      renderExercises(ex);
+      saveCurrentData();
+    }
+
+    function toggleDone(exIdx, sIdx) {
+      const ex = collectCards();
+      ex[exIdx].sets[sIdx].done = !ex[exIdx].sets[sIdx].done;
+      renderExercises(ex);
+      saveCurrentData();
+      if (ex[exIdx].sets[sIdx].done) {
+        triggerRestTimer(appSettings.restSec || 90);
+      }
+    }
+
+    function addSet(exIdx) {
+      const ex = collectCards();
+      const sets = ex[exIdx].sets;
+      const last = sets.length > 0 ? sets[sets.length - 1] : { type: '常', weight: 60, reps: 10, rpe: 8 };
+      sets.push({ type: '常', weight: last.weight, reps: last.reps, rpe: last.rpe, done: false });
+      renderExercises(ex);
+      saveCurrentData();
+    }
+
+    function removeExercise(exIdx) {
+      const ex = collectCards();
+      ex.splice(exIdx, 1);
+      renderExercises(ex);
+      saveCurrentData();
+    }
+
+    function promptNewExercise() {
+      const name = prompt("請輸入新增動作名稱 (例如: 啞鈴飛鳥 / 窄握臥推):");
+      if (name && name.trim()) {
+        const ex = collectCards();
+        ex.push({
+          name: name.trim(),
+          seat: "自訂設定",
+          sets: [{ type: '常', weight: 50, reps: 10, rpe: 8, done: false }]
+        });
+        renderExercises(ex);
+        saveCurrentData();
+      }
+    }
+
+    // 休息計時器邏輯
+    function triggerRestTimer(sec) {
+      clearInterval(timerInterval);
+      timerRemaining = sec;
+      const box = document.getElementById('restTimerBox');
+      const text = document.getElementById('timerText');
+
+      box.classList.add('bg-emerald-950', 'border-emerald-500');
+
+      timerInterval = setInterval(() => {
+        timerRemaining--;
+        const m = Math.floor(timerRemaining / 60);
+        const s = timerRemaining % 60;
+        text.innerText = `${m > 0 ? m + 'm ' : ''}${s}s`;
+
+        if (timerRemaining <= 0) {
+          clearInterval(timerInterval);
+          text.innerText = `${sec}s`;
+          box.classList.remove('bg-emerald-950', 'border-emerald-500');
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        }
+      }, 1000);
+    }
+
+    // 導覽切換
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      ['workout', 'history', 'charts', 'settings'].forEach(t => {
+        const btn = document.getElementById(`navBtn-${t}`);
+        if (t === tabId) {
+          btn.className = "flex flex-col items-center gap-1 text-emerald-400";
+        } else {
+          btn.className = "flex flex-col items-center gap-1 text-zinc-500";
         }
       });
-    });
-    document.getElementById('total-vol').innerText = total;
-  }
 
-  // 4. 槓餅計算器彈窗
-  function openPlateCalc(targetWeight) {
-    const modal = document.getElementById('plate-modal');
-    const info = document.getElementById('plate-info');
-    const res = document.getElementById('plate-result');
+      if (tabId === 'history') renderHistoryList();
+      if (tabId === 'charts') renderChartCanvas();
+    }
 
-    const bar = 20;
-    let perSide = Math.max(0, (targetWeight - bar) / 2);
-    info.innerText = `目標總重: ${targetWeight} kg (扣除標準槓 20kg，單邊需裝 ${perSide} kg)`;
-
-    const plates = [20, 15, 10, 5, 2.5, 1.25];
-    let breakdown = [];
-    let rem = perSide;
-
-    plates.forEach(p => {
-      let count = Math.floor(rem / p);
-      if (count > 0) {
-        breakdown.push(`<b>${p} kg</b> × ${count} 片`);
-        rem -= count * p;
+    function renderHistoryList() {
+      const container = document.getElementById('historyListContainer');
+      container.innerHTML = '';
+      const dates = Object.keys(appStore).sort().reverse();
+      if (dates.length === 0) {
+        container.innerHTML = `<div class="text-zinc-500 text-center py-8 text-xs">暫時未有歷史記錄</div>`;
+        return;
       }
-    });
+      dates.forEach(d => {
+        const record = appStore[d];
+        let totalVol = 0;
+        (record.exercises || []).forEach(e => {
+          (e.sets || []).forEach(s => totalVol += (parseFloat(s.weight) || 0) * (parseFloat(s.reps) || 0));
+        });
+        const item = document.createElement('div');
+        item.className = "bg-zinc-900 border border-zinc-800 rounded-xl p-3 flex justify-between items-center text-xs";
+        item.innerHTML = `
+          <div>
+            <div class="font-bold text-white">${d}</div>
+            <div class="text-zinc-400 text-[11px] mt-0.5">體重: ${record.weight || '-'} kg · 有氧: ${record.cardio || 0}m</div>
+          </div>
+          <div class="text-right">
+            <span class="text-emerald-400 font-mono font-bold">${Math.round(totalVol)} kg</span>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
 
-    res.innerHTML = breakdown.length > 0 ? breakdown.join('<br>') : "無需額外槓片";
-    modal.classList.remove('hidden');
-  }
+    function renderChartCanvas() {
+      // 體重圖表
+      const ctxW = document.getElementById('chartWeight').getContext('2d');
+      const dates = Object.keys(appStore).sort().slice(-7);
+      const weights = dates.map(d => appStore[d].weight ? parseFloat(appStore[d].weight) : null);
 
-  function closeModal(id) {
-    document.getElementById(id).classList.add('hidden');
-  }
+      new Chart(ctxW, {
+        type: 'line',
+        data: {
+          labels: dates.map(d => d.slice(5)),
+          datasets: [{ data: weights, borderColor: '#10b981', tension: 0.3, fill: false }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+    }
 
-  // 5. Onboarding 設定
-  function openOnboarding() {
-    document.getElementById('onboarding-modal').classList.remove('hidden');
-  }
-  function saveOnboarding() {
-    closeModal('onboarding-modal');
-  }
-
-  // 首次打開自動檢查
-  window.onload = function() {
-    updateStats();
-  };
-</script>
+    function exportCSV() {
+      let csv = "Date,Weight(kg),Cardio(min),TotalVolume(kg)\n";
+      Object.keys(appStore).sort().forEach(d => {
+        const r = appStore[d];
+        let vol = 0;
+        (r.exercises || []).forEach(e => (e.sets || []).forEach(s => vol += (parseFloat(s.weight) || 0) * (parseFloat(s.reps) || 0)));
+        csv += `${d},${r.weight||''},${r.cardio||0},${vol}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `workout_cut_${todayStr}.csv`;
+      a.click();
+    }
+  </script>
 </body>
 </html>
